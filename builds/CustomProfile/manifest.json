@@ -8,9 +8,9 @@
     }
   ],
   "main": "index.js",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "vendetta": {
     "icon": "ic_profile_24px"
   },
-  "hash": "eb2bf189b35a8af767334c1dd1826db8eec9ba1bd1565a65a845e7c6d6c3d149"
+  "hash": "712efd77ac3b3f00a6e89f9a76175c910fb71442501c41d62c04e4e263fbb539"
 }
