@@ -1,6 +1,6 @@
 (function (exports) {
   "use strict";
-  // shiggy-monorepo restore 2.5.1
+  // CustomProfile v2.6.0 — connections larp
   var storage = vendetta.plugin.storage;
   var after = vendetta.patcher.after;
   var before = vendetta.patcher.before;
@@ -40,7 +40,6 @@
     ACTIVE_DEVELOPER: 1 << 22
   };
 
-  // Classic flag badges — icon is CDN hash (no extension), used in profile.badges
   var BADGES = [
     { key: "staff", id: "staff", label: "Staff", flag: FLAG.STAFF, icon: "5e74e9b61934fc1f67c65515d1f7e60d", link: "https://discord.com/company" },
     { key: "partner", id: "partner", label: "Partnered Server Owner", flag: FLAG.PARTNER, icon: "3f9748e53446a137a052f3454e2de41e", link: "https://discord.com/partners" },
@@ -56,7 +55,6 @@
     { key: "activedev", id: "active_developer", label: "Active Developer", flag: FLAG.ACTIVE_DEVELOPER, icon: "6bdc42827a38498929a4920da12695d9", link: "https://support-dev.discord.com/hc/articles/10113997751447" }
   ];
 
-  // Nitro tenure badge tiers (icon hash only)
   var NITRO_LEVELS = [
     { label: "Nitro (0 mo)", months: 0, icon: "2ba85e8026a8614b640c2837bcdfe21b", id: "premium" },
     { label: "Bronze (1 mo)", months: 1, icon: "4f33c4a9c64ce221936bd256c356f91f", id: "premium_tenure_1_month" },
@@ -80,6 +78,85 @@
     { label: "18 Months", months: 18, icon: "7142225d31238f6387d9f09efaa02759", id: "guild_booster_lvl8" },
     { label: "24 Months", months: 24, icon: "ec92202290b48d0879b7413d2dde3bab", id: "guild_booster_lvl9" }
   ];
+
+  var CONNECTION_TYPES = [
+    { id: "steam", label: "Steam", placeholder: "steam_id" },
+    { id: "xbox", label: "Xbox", placeholder: "Gamertag" },
+    { id: "playstation", label: "PlayStation", placeholder: "PSN_ID" },
+    { id: "epicgames", label: "Epic Games", placeholder: "EpicName" },
+    { id: "riotgames", label: "Riot Games", placeholder: "Name#TAG" },
+    { id: "leagueoflegends", label: "League of Legends", placeholder: "Name#TAG" },
+    { id: "battlenet", label: "Battle.net", placeholder: "Name#1234" },
+    { id: "bungie", label: "Bungie.net", placeholder: "Name#1234" },
+    { id: "roblox", label: "Roblox", placeholder: "username" },
+    { id: "spotify", label: "Spotify", placeholder: "user" },
+    { id: "amazon-music", label: "Amazon Music", placeholder: "user" },
+    { id: "soundcloud", label: "SoundCloud", placeholder: "user" },
+    { id: "youtube", label: "YouTube", placeholder: "channel" },
+    { id: "twitch", label: "Twitch", placeholder: "user" },
+    { id: "tiktok", label: "TikTok", placeholder: "user" },
+    { id: "twitter", label: "X (Twitter)", placeholder: "handle" },
+    { id: "bluesky", label: "Bluesky", placeholder: "user.bsky.social" },
+    { id: "github", label: "GitHub", placeholder: "user" },
+    { id: "reddit", label: "Reddit", placeholder: "user" },
+    { id: "facebook", label: "Facebook", placeholder: "user" },
+    { id: "instagram", label: "Instagram", placeholder: "user" },
+    { id: "paypal", label: "PayPal", placeholder: "user" },
+    { id: "ebay", label: "eBay", placeholder: "user" },
+    { id: "crunchyroll", label: "Crunchyroll", placeholder: "user" },
+    { id: "domain", label: "Domain", placeholder: "example.com" },
+    { id: "mastodon", label: "Mastodon", placeholder: "@user@server" },
+    { id: "skype", label: "Skype", placeholder: "user" }
+  ];
+
+  function defaultConnUrl(type, name) {
+    if (!name) return undefined;
+    var n = String(name).replace(/^@/, "");
+    if (type === "domain") return /^https?:\/\//i.test(name) ? name : ("https://" + name);
+    if (type === "twitter") return "https://x.com/" + n;
+    if (type === "github") return "https://github.com/" + n;
+    if (type === "youtube") return "https://youtube.com/@" + n;
+    if (type === "twitch") return "https://twitch.tv/" + n;
+    if (type === "spotify") return "https://open.spotify.com/user/" + n;
+    if (type === "tiktok") return "https://tiktok.com/@" + n;
+    if (type === "reddit") return "https://reddit.com/user/" + n;
+    if (type === "steam") return "https://steamcommunity.com/id/" + n;
+    if (type === "bluesky") return "https://bsky.app/profile/" + n;
+    if (type === "paypal") return "https://paypal.me/" + n;
+    if (type === "facebook") return "https://facebook.com/" + n;
+    if (type === "instagram") return "https://instagram.com/" + n;
+    return undefined;
+  }
+
+  function getConnections() {
+    var list = storage.connections;
+    if (!Array.isArray(list)) return [];
+    return list.filter(function (c) { return c && c.type && c.name; });
+  }
+
+  function formatConnections() {
+    return getConnections().map(function (c) {
+      var url = c.url || defaultConnUrl(c.type, c.name);
+      var obj = {
+        type: c.type,
+        id: String(c.name),
+        name: String(c.name),
+        verified: c.verified !== false,
+        visibility: 1,
+        show_activity: false,
+        showActivity: false,
+        friend_sync: false,
+        friendSync: false,
+        metadata_visibility: 0,
+        metadataVisibility: 0,
+        two_way_link: false,
+        twoWayLink: false,
+        metadata: {}
+      };
+      if (url) obj.url = url;
+      return obj;
+    });
+  }
 
   var unpatches = [];
   var cachedSelfId = null;
@@ -132,6 +209,10 @@
     if (storage.hideRealBadges == null) storage.hideRealBadges = true;
     if (storage.accentColor == null) storage.accentColor = "";
     if (storage.targetId == null) storage.targetId = "";
+    if (storage.connections == null) storage.connections = [];
+    if (storage.hideRealConnections == null) storage.hideRealConnections = false;
+    if (storage.draftConnType == null) storage.draftConnType = 0;
+    if (storage.draftConnName == null) storage.draftConnName = "";
   }
 
   function resolveSelfIdSafe() {
@@ -195,19 +276,13 @@
     }
   }
 
-  /** Build the profile.badges array Discord mobile actually renders. */
   function buildBadgesArray() {
     var out = [];
     var bf = getBadgeFlags();
     for (var i = 0; i < BADGES.length; i++) {
       var b = BADGES[i];
       if (bf & b.flag) {
-        out.push({
-          id: b.id,
-          description: b.label,
-          icon: b.icon,
-          link: b.link
-        });
+        out.push({ id: b.id, description: b.label, icon: b.icon, link: b.link });
       }
     }
     if (storage.nitro) {
@@ -216,23 +291,13 @@
       if (nl >= NITRO_LEVELS.length) nl = NITRO_LEVELS.length - 1;
       var nt = NITRO_LEVELS[nl];
       var since = nitroSinceISO();
-      out.push({
-        id: nt.id,
-        description: "Subscriber since " + formatSince(since),
-        icon: nt.icon,
-        link: "https://discord.com/settings/premium"
-      });
+      out.push({ id: nt.id, description: "Subscriber since " + formatSince(since), icon: nt.icon, link: "https://discord.com/settings/premium" });
     }
     var bl = Number(storage.boostLevel);
     if (!isNaN(bl) && bl >= 0 && bl < BOOST_LEVELS.length) {
       var bt = BOOST_LEVELS[bl];
       var bSince = boostSinceISO();
-      out.push({
-        id: bt.id,
-        description: "Server boosting since " + formatSince(bSince),
-        icon: bt.icon,
-        link: "https://discord.com/settings/premium"
-      });
+      out.push({ id: bt.id, description: "Server boosting since " + formatSince(bSince), icon: bt.icon, link: "https://discord.com/settings/premium" });
     }
     return out;
   }
@@ -242,37 +307,18 @@
     if (!isTarget(user.id)) return user;
     try {
       if (storage.username) user.username = storage.username;
-      if (storage.globalName) {
-        user.globalName = storage.globalName;
-        user.displayName = storage.globalName;
-      }
-      if (storage.avatar && !/^https?:\/\//i.test(String(storage.avatar))) {
-        user.avatar = storage.avatar;
-      }
-
-      // Always set publicFlags from our selection when managing badges
+      if (storage.globalName) { user.globalName = storage.globalName; user.displayName = storage.globalName; }
+      if (storage.avatar && !/^https?:\/\//i.test(String(storage.avatar))) user.avatar = storage.avatar;
       var bf = getBadgeFlags();
-      if (storage.hideRealBadges || bf) {
-        user.publicFlags = bf;
-        user.flags = bf;
-      }
-
+      if (storage.hideRealBadges || bf) { user.publicFlags = bf; user.flags = bf; }
       if (storage.nitro) {
-        user.premiumType = 2;
-        user.premium_type = 2;
-        user.premiumSince = nitroSinceISO();
-        user.premium_since = user.premiumSince;
+        user.premiumType = 2; user.premium_type = 2;
+        user.premiumSince = nitroSinceISO(); user.premium_since = user.premiumSince;
       }
-
       var boostIso = boostSinceISO();
-      if (boostIso) {
-        user.premiumGuildSince = boostIso;
-        user.premium_guild_since = boostIso;
-      } else if (storage.hideRealBadges) {
-        try {
-          user.premiumGuildSince = null;
-          user.premium_guild_since = null;
-        } catch (e) {}
+      if (boostIso) { user.premiumGuildSince = boostIso; user.premium_guild_since = boostIso; }
+      else if (storage.hideRealBadges) {
+        try { user.premiumGuildSince = null; user.premium_guild_since = null; } catch (e) {}
       }
     } catch (e) {}
     return user;
@@ -281,9 +327,8 @@
   function applyToProfile(profile) {
     if (!profile || !storage.enabled) return profile;
     var pid = profile.userId || (profile.user && profile.user.id) || profile.id;
-    if (pid != null) {
-      if (!isTarget(pid)) return profile;
-    } else {
+    if (pid != null) { if (!isTarget(pid)) return profile; }
+    else {
       var tid = targetId();
       if (!tid || !cachedSelfId || tid !== cachedSelfId) return profile;
     }
@@ -293,52 +338,31 @@
       if (storage.banner && !/^https?:\/\//i.test(String(storage.banner))) profile.banner = storage.banner;
       if (storage.accentColor != null && storage.accentColor !== "") {
         var n = Number(storage.accentColor);
-        if (!isNaN(n)) {
-          profile.accentColor = n;
-          profile.themeColors = profile.themeColors || [n, n];
-        }
+        if (!isNaN(n)) { profile.accentColor = n; profile.themeColors = profile.themeColors || [n, n]; }
       }
       if (storage.createdAt) {
         try { profile.createdAt = new Date(storage.createdAt).toISOString(); } catch (e) {}
       }
-
       var bf = getBadgeFlags();
-      if (storage.hideRealBadges || bf) {
-        profile.publicFlags = bf;
-        profile.flags = bf;
-      }
-
+      if (storage.hideRealBadges || bf) { profile.publicFlags = bf; profile.flags = bf; }
       if (storage.nitro) {
-        profile.premiumType = 2;
-        profile.premium_type = 2;
-        profile.premiumSince = nitroSinceISO();
-        profile.premium_since = profile.premiumSince;
+        profile.premiumType = 2; profile.premium_type = 2;
+        profile.premiumSince = nitroSinceISO(); profile.premium_since = profile.premiumSince;
       }
-
       var boostIso = boostSinceISO();
-      if (boostIso) {
-        profile.premiumGuildSince = boostIso;
-        profile.premium_guild_since = boostIso;
-      } else if (storage.hideRealBadges) {
-        try {
-          profile.premiumGuildSince = null;
-          profile.premium_guild_since = null;
-        } catch (e) {}
+      if (boostIso) { profile.premiumGuildSince = boostIso; profile.premium_guild_since = boostIso; }
+      else if (storage.hideRealBadges) {
+        try { profile.premiumGuildSince = null; profile.premium_guild_since = null; } catch (e) {}
       }
-
-      // THIS is what mobile profile UI actually paints
       var built = buildBadgesArray();
-      if (storage.hideRealBadges) {
-        profile.badges = built;
-      } else {
+      if (storage.hideRealBadges) profile.badges = built;
+      else {
         var existing = Array.isArray(profile.badges) ? profile.badges.slice() : [];
-        // strip ones we manage, then append ours
         var managedIds = {};
         for (var i = 0; i < BADGES.length; i++) managedIds[BADGES[i].id] = true;
         for (var j = 0; j < NITRO_LEVELS.length; j++) managedIds[NITRO_LEVELS[j].id] = true;
         for (var k = 0; k < BOOST_LEVELS.length; k++) managedIds[BOOST_LEVELS[k].id] = true;
-        managedIds["premium"] = true;
-        managedIds["nitro"] = true;
+        managedIds["premium"] = true; managedIds["nitro"] = true;
         existing = existing.filter(function (b) {
           if (!b || !b.id) return true;
           if (managedIds[b.id]) return false;
@@ -349,25 +373,30 @@
         });
         profile.badges = existing.concat(built);
       }
+      var fakeConns = formatConnections();
+      if (fakeConns.length || storage.hideRealConnections) {
+        if (storage.hideRealConnections) {
+          profile.connectedAccounts = fakeConns;
+          profile.connected_accounts = fakeConns;
+        } else {
+          var existC = Array.isArray(profile.connectedAccounts)
+            ? profile.connectedAccounts.slice()
+            : (Array.isArray(profile.connected_accounts) ? profile.connected_accounts.slice() : []);
+          profile.connectedAccounts = existC.concat(fakeConns);
+          profile.connected_accounts = profile.connectedAccounts;
+        }
+      }
     } catch (e) {}
     return profile;
   }
 
   function forceRerender() {
-    try {
-      var us = findUserStore();
-      if (us && us.emitChange) us.emitChange();
-    } catch (e) {}
-    try {
-      var ps = findUserProfileStore();
-      if (ps && ps.emitChange) ps.emitChange();
-    } catch (e) {}
+    try { var us = findUserStore(); if (us && us.emitChange) us.emitChange(); } catch (e) {}
+    try { var ps = findUserProfileStore(); if (ps && ps.emitChange) ps.emitChange(); } catch (e) {}
   }
 
   function uninstallPatches() {
-    while (unpatches.length) {
-      try { unpatches.pop()(); } catch (e) {}
-    }
+    while (unpatches.length) { try { unpatches.pop()(); } catch (e) {} }
   }
 
   function installPatches() {
@@ -382,16 +411,12 @@
       }));
     }
     if (UserStore && UserStore.getUser) {
-      unpatches.push(after("getUser", UserStore, function (_, res) {
-        return applyToUser(res);
-      }));
+      unpatches.push(after("getUser", UserStore, function (_, res) { return applyToUser(res); }));
     }
 
     var ProfileStore = findUserProfileStore();
     if (ProfileStore && ProfileStore.getUserProfile) {
-      unpatches.push(after("getUserProfile", ProfileStore, function (_, res) {
-        return applyToProfile(res);
-      }));
+      unpatches.push(after("getUserProfile", ProfileStore, function (_, res) { return applyToProfile(res); }));
     }
 
     var avatarStuff = findAvatarStuff();
@@ -456,9 +481,8 @@
       unpatches.push(after("isPremium", prem, function (args, res) {
         if (!storage.enabled || !storage.nitro) return res;
         var id = args && args[0] && (args[0].id != null ? args[0].id : args[0]);
-        if (id != null) {
-          if (!isTarget(id)) return res;
-        } else {
+        if (id != null) { if (!isTarget(id)) return res; }
+        else {
           var tid = targetId();
           if (!tid || !cachedSelfId || tid !== cachedSelfId) return res;
         }
@@ -478,107 +502,80 @@
             for (var i = 0; i < rows.length; i++) {
               var row = rows[i];
               if (!row || row.type !== 1 || !row.message) continue;
-              var authorId = String(
-                row.message.authorId != null
-                  ? row.message.authorId
-                  : row.message.userId != null
-                    ? row.message.userId
-                    : ""
-              );
+              var authorId = String(row.message.authorId != null ? row.message.authorId : row.message.userId != null ? row.message.userId : "");
               if (authorId !== tid) continue;
-              if (storage.avatar && /^https?:\/\//i.test(String(storage.avatar)))
-                row.message.avatarURL = storage.avatar;
+              if (storage.avatar && /^https?:\/\//i.test(String(storage.avatar))) row.message.avatarURL = storage.avatar;
               if (storage.globalName) {
                 row.message.username = storage.globalName;
                 if (row.message.nick != null) row.message.nick = storage.globalName;
-              } else if (storage.username) {
-                row.message.username = storage.username;
-              }
+              } else if (storage.username) row.message.username = storage.username;
             }
             args[1] = JSON.stringify(rows);
           } catch (e) {}
         }));
       }
     } catch (e) {}
-  }
 
-  // --- Settings ---
+    try {
+      var CAS = safeFind(function () { return findByProps("getAccounts", "getLocalAccounts"); })
+        || safeFind(function () { return findByProps("getAccounts"); });
+      if (CAS && CAS.getAccounts) {
+        unpatches.push(after("getAccounts", CAS, function (_, res) {
+          if (!storage.enabled) return res;
+          var tid = targetId();
+          if (!tid || !cachedSelfId || tid !== cachedSelfId) return res;
+          var fake = formatConnections();
+          if (!fake.length && !storage.hideRealConnections) return res;
+          var base = storage.hideRealConnections ? [] : (Array.isArray(res) ? res.slice() : []);
+          return base.concat(fake);
+        }));
+      }
+    } catch (e) {}
+  }
 
   function Settings() {
     useProxy(storage);
-    // Force re-render when cycling numbers (useProxy can miss pure number toggles)
     var tick = React.useReducer(function (x) { return x + 1; }, 0);
     var bump = tick[1];
-
-    function setAndBump(fn) {
-      fn();
-      bump();
-      forceRerender();
-    }
-
+    function setAndBump(fn) { fn(); bump(); forceRerender(); }
     var children = [];
 
     function sectionTitle(title) {
-      if (FormSection) {
-        return React.createElement(FormSection, { key: "sec-" + title, title: title });
-      }
+      if (FormSection) return React.createElement(FormSection, { key: "sec-" + title, title: title });
       return React.createElement(Text, {
         key: "sec-" + title,
-        style: {
-          marginHorizontal: 16, marginTop: 18, marginBottom: 6,
-          fontSize: 13, fontWeight: "700", opacity: 0.6, color: "#aaa", textTransform: "uppercase"
-        }
+        style: { marginHorizontal: 16, marginTop: 18, marginBottom: 6, fontSize: 13, fontWeight: "700", opacity: 0.6, color: "#aaa", textTransform: "uppercase" }
       }, title);
     }
-
     function field(key, label, placeholder) {
       if (FormInput) {
         return React.createElement(FormInput, {
-          key: key,
-          title: label,
-          value: storage[key] || "",
-          placeholder: placeholder || "",
+          key: key, title: label, value: storage[key] || "", placeholder: placeholder || "",
           onChange: function (t) { storage[key] = t; bump(); },
           onChangeText: function (t) { storage[key] = t; bump(); }
         });
       }
-      return React.createElement(View, {
-        key: key,
-        style: { marginHorizontal: 16, marginVertical: 8 }
-      },
+      return React.createElement(View, { key: key, style: { marginHorizontal: 16, marginVertical: 8 } },
         React.createElement(Text, { style: { marginBottom: 4, opacity: 0.7, fontSize: 13, color: "#ccc" } }, label),
         React.createElement(TextInput, {
-          value: storage[key] || "",
-          placeholder: placeholder || "",
-          placeholderTextColor: "#888",
+          value: storage[key] || "", placeholder: placeholder || "", placeholderTextColor: "#888",
           onChangeText: function (t) { storage[key] = t; bump(); },
-          autoCapitalize: "none",
-          autoCorrect: false,
-          style: {
-            backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 8,
-            paddingHorizontal: 12, paddingVertical: 10, color: "#fff", fontSize: 15
-          }
+          autoCapitalize: "none", autoCorrect: false,
+          style: { backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: "#fff", fontSize: 15 }
         })
       );
     }
-
     function switchRow(key, label, subLabel) {
       var val = !!storage[key];
-      function flip() {
-        setAndBump(function () { storage[key] = !storage[key]; });
-      }
+      function flip() { setAndBump(function () { storage[key] = !storage[key]; }); }
       if (FormRow && FormSwitch) {
         return React.createElement(FormRow, {
-          key: key,
-          label: label,
-          subLabel: subLabel,
-          trailing: React.createElement(FormSwitch, { value: val, onValueChange: flip }),
-          onPress: flip
+          key: key, label: label, subLabel: subLabel,
+          trailing: React.createElement(FormSwitch, { value: val, onValueChange: flip }), onPress: flip
         });
       }
       return React.createElement(View, {
-        key: key,
-        style: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }
+        key: key, style: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 }
       },
         React.createElement(View, { style: { flex: 1, paddingRight: 12 } },
           React.createElement(Text, { style: { color: "#fff", fontSize: 16 } }, label),
@@ -587,7 +584,6 @@
         React.createElement(Switch, { value: val, onValueChange: flip })
       );
     }
-
     function badgeToggle(badge) {
       var flags = getBadgeFlags();
       var on = !!(flags & badge.flag);
@@ -607,16 +603,12 @@
       }
       if (FormRow && FormSwitch) {
         return React.createElement(FormRow, {
-          key: "badge-" + badge.key,
-          label: badge.label,
-          leading: leading,
-          trailing: React.createElement(FormSwitch, { value: on, onValueChange: flip }),
-          onPress: flip
+          key: "badge-" + badge.key, label: badge.label, leading: leading,
+          trailing: React.createElement(FormSwitch, { value: on, onValueChange: flip }), onPress: flip
         });
       }
       return React.createElement(TouchableOpacity, {
-        key: "badge-" + badge.key,
-        onPress: flip,
+        key: "badge-" + badge.key, onPress: flip,
         style: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10 }
       },
         React.createElement(View, { style: { flexDirection: "row", alignItems: "center", flex: 1 } },
@@ -626,31 +618,20 @@
         React.createElement(Switch, { value: on, onValueChange: flip })
       );
     }
-
     function cycleRow(label, valueLabel, onPress) {
-      if (FormRow) {
-        return React.createElement(FormRow, {
-          key: label,
-          label: label,
-          subLabel: valueLabel,
-          onPress: onPress
-        });
-      }
+      if (FormRow) return React.createElement(FormRow, { key: label, label: label, subLabel: valueLabel, onPress: onPress });
       return React.createElement(TouchableOpacity, {
-        key: label,
-        onPress: onPress,
+        key: label, onPress: onPress,
         style: { marginHorizontal: 16, marginVertical: 6, padding: 12, borderRadius: 8, backgroundColor: "rgba(255,255,255,0.06)" }
       },
         React.createElement(Text, { style: { color: "#fff", fontSize: 15 } }, label),
         React.createElement(Text, { style: { color: "#aaa", fontSize: 13, marginTop: 2 } }, valueLabel)
       );
     }
-
     function action(label, fn) {
       if (FormRow) return React.createElement(FormRow, { key: label, label: label, onPress: fn });
       return React.createElement(TouchableOpacity, {
-        key: label,
-        onPress: fn,
+        key: label, onPress: fn,
         style: { margin: 12, padding: 14, borderRadius: 8, backgroundColor: "rgba(88,101,242,0.3)" }
       }, React.createElement(Text, { style: { color: "#fff", textAlign: "center", fontSize: 15 } }, label));
     }
@@ -671,16 +652,11 @@
     children.push(field("avatar", "Avatar URL", "https://..."));
     children.push(field("banner", "Banner URL", "https://..."));
 
-    var accentDisplay =
-      storage.accentColor != null && storage.accentColor !== ""
-        ? Number(storage.accentColor).toString(16).padStart(6, "0")
-        : "";
+    var accentDisplay = storage.accentColor != null && storage.accentColor !== ""
+      ? Number(storage.accentColor).toString(16).padStart(6, "0") : "";
     if (FormInput) {
       children.push(React.createElement(FormInput, {
-        key: "accent",
-        title: "Accent color (hex, no #)",
-        value: accentDisplay,
-        placeholder: "5865f2",
+        key: "accent", title: "Accent color (hex, no #)", value: accentDisplay, placeholder: "5865f2",
         onChange: function (t) {
           var h = String(t || "").replace("#", "");
           var n = parseInt(h, 16);
@@ -701,58 +677,84 @@
     var nl = Number(storage.nitroLevel);
     if (isNaN(nl) || nl < 0) nl = 0;
     if (nl >= NITRO_LEVELS.length) nl = NITRO_LEVELS.length - 1;
-    children.push(cycleRow(
-      "Nitro tier: " + NITRO_LEVELS[nl].label,
-      "Tap to cycle · changes badge icon on profile",
-      function () {
-        setAndBump(function () {
-          var cur = Number(storage.nitroLevel);
-          if (isNaN(cur) || cur < 0) cur = 0;
-          storage.nitroLevel = (cur + 1) % NITRO_LEVELS.length;
-          storage.premiumSince = "";
-          storage.nitro = true;
-        });
-      }
-    ));
+    children.push(cycleRow("Nitro tier: " + NITRO_LEVELS[nl].label, "Tap to cycle · changes badge icon on profile", function () {
+      setAndBump(function () {
+        var cur = Number(storage.nitroLevel);
+        if (isNaN(cur) || cur < 0) cur = 0;
+        storage.nitroLevel = (cur + 1) % NITRO_LEVELS.length;
+        storage.premiumSince = "";
+        storage.nitro = true;
+      });
+    }));
     children.push(field("premiumSince", "Premium since override (optional)", "YYYY-MM-DD — leave empty to use tier"));
 
     children.push(sectionTitle("Boost badge"));
     var bl = Number(storage.boostLevel);
     var boostLabel = (isNaN(bl) || bl < 0) ? "None" : (BOOST_LEVELS[bl] ? BOOST_LEVELS[bl].label : "None");
-    children.push(cycleRow(
-      "Boost: " + boostLabel,
-      "Tap to cycle · None → 1mo → … → 24mo",
-      function () {
-        setAndBump(function () {
-          var cur = Number(storage.boostLevel);
-          if (isNaN(cur)) cur = -1;
-          if (cur >= BOOST_LEVELS.length - 1) storage.boostLevel = -1;
-          else storage.boostLevel = cur + 1;
-        });
-      }
-    ));
+    children.push(cycleRow("Boost: " + boostLabel, "Tap to cycle · None → 1mo → … → 24mo", function () {
+      setAndBump(function () {
+        var cur = Number(storage.boostLevel);
+        if (isNaN(cur)) cur = -1;
+        if (cur >= BOOST_LEVELS.length - 1) storage.boostLevel = -1;
+        else storage.boostLevel = cur + 1;
+      });
+    }));
 
-    children.push(sectionTitle("Classic badges (publicFlags + profile.badges)"));
+    children.push(sectionTitle("Classic badges"));
     children.push(React.createElement(Text, {
-      key: "badge-help",
-      style: { marginHorizontal: 16, marginBottom: 8, fontSize: 12, color: "#888" }
-    }, "These appear on your profile when Hide real badges is on (or merged when off)."));
-    for (var i = 0; i < BADGES.length; i++) {
-      children.push(badgeToggle(BADGES[i]));
+      key: "badge-help", style: { marginHorizontal: 16, marginBottom: 8, fontSize: 12, color: "#888" }
+    }, "These appear on your profile when Hide real badges is on."));
+    for (var bi = 0; bi < BADGES.length; bi++) children.push(badgeToggle(BADGES[bi]));
+
+    children.push(sectionTitle("Connections (profile)"));
+    children.push(switchRow("hideRealConnections", "Hide real connections", "Replace profile connections with fakes only"));
+    var conns = getConnections();
+    children.push(React.createElement(Text, {
+      key: "conn-help", style: { marginHorizontal: 16, marginBottom: 6, fontSize: 12, color: "#888" }
+    }, conns.length + " fake connection(s). Local only."));
+    for (var ci = 0; ci < conns.length; ci++) {
+      (function (idx) {
+        var c = conns[idx];
+        children.push(cycleRow((c.type || "?") + ": " + (c.name || ""), "Tap to remove", function () {
+          setAndBump(function () {
+            var list = getConnections().slice();
+            list.splice(idx, 1);
+            storage.connections = list;
+          });
+        }));
+      })(ci);
     }
+    var dti = Number(storage.draftConnType);
+    if (isNaN(dti) || dti < 0) dti = 0;
+    if (dti >= CONNECTION_TYPES.length) dti = 0;
+    var dType = CONNECTION_TYPES[dti];
+    children.push(cycleRow("Type: " + dType.label, "Tap to cycle platform", function () {
+      setAndBump(function () {
+        var cur = Number(storage.draftConnType);
+        if (isNaN(cur) || cur < 0) cur = 0;
+        storage.draftConnType = (cur + 1) % CONNECTION_TYPES.length;
+      });
+    }));
+    children.push(field("draftConnName", "Connection username / handle", dType.placeholder));
+    children.push(action("Add connection", function () {
+      setAndBump(function () {
+        var name = String(storage.draftConnName || "").trim();
+        if (!name) return;
+        var ti = Number(storage.draftConnType);
+        if (isNaN(ti) || ti < 0 || ti >= CONNECTION_TYPES.length) ti = 0;
+        var list = getConnections().slice();
+        list.push({ type: CONNECTION_TYPES[ti].id, name: name, verified: true });
+        storage.connections = list;
+        storage.draftConnName = "";
+      });
+    }));
 
     children.push(sectionTitle("Actions"));
-    children.push(action("Apply / Refresh", function () {
-      installPatches();
-      forceRerender();
-      bump();
-    }));
+    children.push(action("Apply / Refresh", function () { installPatches(); forceRerender(); bump(); }));
     children.push(action("Reset all", function () {
       setAndBump(function () {
         var keys = Object.keys(storage);
-        for (var j = 0; j < keys.length; j++) {
-          try { delete storage[keys[j]]; } catch (e) {}
-        }
+        for (var j = 0; j < keys.length; j++) { try { delete storage[keys[j]]; } catch (e) {} }
         ensureDefaults();
         storage.enabled = false;
         installPatches();
@@ -760,9 +762,8 @@
     }));
 
     children.push(React.createElement(Text, {
-      key: "foot",
-      style: { margin: 16, opacity: 0.5, fontSize: 12, textAlign: "center", color: "#888" }
-    }, "CustomProfile v2.5.1 — rebuilds profile.badges (mobile)"));
+      key: "foot", style: { margin: 16, opacity: 0.5, fontSize: 12, textAlign: "center", color: "#888" }
+    }, "CustomProfile v2.6.0 — badges + connections"));
 
     return React.createElement(ScrollView, { style: { flex: 1 } }, children);
   }
@@ -775,9 +776,7 @@
         storage.badgeFlags = isNaN(parsed) ? 0 : parsed;
       }
       installPatches();
-      try {
-        logger.log("[CustomProfile] v2.5.1 loaded selfId=" + cachedSelfId + " flags=" + getBadgeFlags() + " nitroLevel=" + storage.nitroLevel);
-      } catch (e) {}
+      try { logger.log("[CustomProfile] v2.6.0 loaded"); } catch (e) {}
     },
     onUnload: function () {
       uninstallPatches();
@@ -787,8 +786,6 @@
   };
 
   exports.default = plugin;
-  try {
-    Object.defineProperty(exports, "__esModule", { value: true });
-  } catch (e) {}
+  try { Object.defineProperty(exports, "__esModule", { value: true }); } catch (e) {}
   return exports;
 })({});
