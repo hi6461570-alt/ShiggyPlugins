@@ -1,0 +1,10 @@
+{
+  "$meta": {
+    "name": "ShiggyPlugins",
+    "description": "Plugins for ShiggyCord"
+  },
+  "CustomProfile": {
+    "version": "2.5.0",
+    "alwaysFetch": true
+  }
+}
