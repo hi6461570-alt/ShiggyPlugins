@@ -1,9 +1,9 @@
 {
   "name": "ShowBadgesInChat",
-  "description": "Show classic + Nitro + boost + profile badges next to usernames in chat",
+  "description": "Show every profile badge next to usernames in guilds, DMs, and groups",
   "authors": [{"name": "fratboys", "id": "0"}],
   "main": "index.js",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "vendetta": {"icon": "ic_person_shield_24px"},
-  "hash": "7fe7d2cb073603b2667e4292936c092049531d86ec2b9728234caec0fd7c2ad4"
+  "hash": "29fb80d6571b9e714ed01c30742659df4c58df76e8310d8db1c752f8f36115fc"
 }
