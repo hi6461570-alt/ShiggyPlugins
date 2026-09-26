@@ -1,16 +1,9 @@
 {
   "name": "CustomProfile",
   "description": "Larp plugin for Shiggy ;)",
-  "authors": [
-    {
-      "name": "fratboys",
-      "id": "0"
-    }
-  ],
+  "authors": [{"name": "fratboys", "id": "0"}],
   "main": "index.js",
-  "version": "2.6.1",
-  "vendetta": {
-    "icon": "ic_profile_24px"
-  },
-  "hash": "a94a87ef9f06a1cb7a829349fdb873614403bb0566aacc876ad9ba50e92869c9"
+  "version": "2.7.0",
+  "vendetta": {"icon": "ic_profile_24px"},
+  "hash": "3c797ce98cba39e8f7b78bc743350a906565281661ccd90f39452abebc63d2bc"
 }
