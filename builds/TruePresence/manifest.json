@@ -3,7 +3,7 @@
   "description": "Reveal users who appear offline but are actually active (local)",
   "authors": [{"name": "fratboys", "id": "0"}],
   "main": "index.js",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "vendetta": {"icon": "ic_status_online_24px"},
-  "hash": "48f5a44c3a2607dcb8dcff13fc713fbace8b0373c3cfe8eb6c6ad1a7f747eb8a"
+  "hash": "5916f081fb2e4716475bd2338c5311ab3c7e74d4cce40cdca22a041bd9fb27bb"
 }

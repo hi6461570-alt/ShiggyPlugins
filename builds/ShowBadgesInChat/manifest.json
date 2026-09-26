@@ -1,9 +1,9 @@
 {
   "name": "ShowBadgesInChat",
-  "description": "Show classic profile badges next to usernames in chat",
+  "description": "Show classic + Nitro + boost + profile badges next to usernames in chat",
   "authors": [{"name": "fratboys", "id": "0"}],
   "main": "index.js",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "vendetta": {"icon": "ic_person_shield_24px"},
-  "hash": "13e278918c469fad3ecde0b28e0da8ef1827c5ae0d9d36278be3420fcef72fd4"
+  "hash": "838fe6a229752431bbe44ee3d3fa56231080c37b9e7652f23d9238b3c8a38d36"
 }
