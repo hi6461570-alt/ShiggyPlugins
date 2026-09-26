@@ -56,7 +56,7 @@
       if (j.message && String(j.message).indexOf("http") === 0) return j.message;
     } catch (e) {}
     var t = String(responseText || "").trim();
-    if (t.indexOf("http") === 0) return t.split(" ")[0];
+    if (t.indexOf("http") === 0) return t.split(" ")[0].split("\n")[0];
     throw new Error("Could not parse upload URL from response");
   }
 
@@ -75,20 +75,23 @@
 
   async function uploadUrl(sourceUrl) {
     ensure();
-    if (!storage.sxcu || !String(storage.sxcu).trim()) throw new Error("No .sxcu configured. Run /sharex config");
+    if (!storage.sxcu || !String(storage.sxcu).trim())
+      throw new Error("No .sxcu configured. Use /sharex-config");
     var sxcu = parseSxcu(storage.sxcu);
     var file = await fetchAsBlob(sourceUrl);
     var method = (sxcu.RequestMethod || "POST").toUpperCase();
     var headers = Object.assign({}, sxcu.Headers || {});
     var form = new FormData();
     var args = sxcu.Arguments || {};
-    for (var k in args) if (Object.prototype.hasOwnProperty.call(args, k)) form.append(k, args[k]);
+    for (var k in args)
+      if (Object.prototype.hasOwnProperty.call(args, k)) form.append(k, args[k]);
     form.append(sxcu.FileFormName || "file", file.blob, file.name);
     var url = sxcu.RequestURL;
     if (sxcu.Parameters) {
       var qs = [];
-      for (var p in sxcu.Parameters) if (Object.prototype.hasOwnProperty.call(sxcu.Parameters, p))
-        qs.push(encodeURIComponent(p) + "=" + encodeURIComponent(sxcu.Parameters[p]));
+      for (var p in sxcu.Parameters)
+        if (Object.prototype.hasOwnProperty.call(sxcu.Parameters, p))
+          qs.push(encodeURIComponent(p) + "=" + encodeURIComponent(sxcu.Parameters[p]));
       if (qs.length) url += (url.indexOf("?") >= 0 ? "&" : "?") + qs.join("&");
     }
     delete headers["Content-Type"];
@@ -102,62 +105,96 @@
     return out;
   }
 
+  function getOpt(args, name) {
+    if (!args) return null;
+    for (var i = 0; i < args.length; i++) {
+      if (args[i] && args[i].name === name) return args[i].value;
+    }
+    return null;
+  }
+
   function regCmd() {
     var reg = vendetta.commands && vendetta.commands.registerCommand;
-    if (!reg) { try { logger.log("[ShareX] commands API missing"); } catch (e) {} return; }
-    unreg.push(reg({
-      name: "sharex",
-      description: "ShareX uploader — config / upload",
-      options: [
-        { name: "config", description: "Paste full .sxcu JSON", type: 1,
-          options: [{ name: "sxcu", description: "Raw .sxcu JSON string", type: 3, required: true }] },
-        { name: "upload", description: "Download URL, upload via .sxcu, send result", type: 1,
-          options: [{ name: "url", description: "Image or file URL to rehost", type: 3, required: true }] },
-        { name: "status", description: "Show current uploader", type: 1, options: [] }
-      ],
-      execute: function (args) {
-        ensure();
-        return (async function () {
-          try {
-            var subName = null;
-            var optMap = {};
-            function walk(list) {
-              if (!list) return;
-              for (var i = 0; i < list.length; i++) {
-                var a = list[i];
-                if (a.options) walk(a.options);
-                if (a.name && a.value != null) optMap[a.name] = a.value;
-                if (a.name && (a.type === 1 || a.options)) subName = subName || a.name;
-              }
-            }
-            walk(args);
-            if (!subName && args && args[0]) subName = args[0].name;
-            if (subName === "config") {
-              var raw = optMap.sxcu || "";
+    if (!reg) {
+      try { logger.log("[ShareX] commands API missing"); } catch (e) {}
+      return;
+    }
+
+    unreg.push(
+      reg({
+        name: "sharex-config",
+        description: "Save ShareX .sxcu uploader config",
+        options: [
+          { name: "sxcu", description: "Full .sxcu JSON string", type: 3, required: true }
+        ],
+        execute: function (args) {
+          return (async function () {
+            try {
+              ensure();
+              var raw = getOpt(args, "sxcu") || "";
               parseSxcu(raw);
               storage.sxcu = raw;
               var name = "uploader";
               try { name = JSON.parse(raw).Name || name; } catch (e) {}
               return { content: "ShareX config saved: **" + name + "**" };
+            } catch (e) {
+              storage.lastError = String(e && e.message || e);
+              return { content: "ShareX error: " + storage.lastError };
             }
-            if (subName === "status") {
-              if (!storage.sxcu) return { content: "No .sxcu configured." };
+          })();
+        }
+      })
+    );
+
+    unreg.push(
+      reg({
+        name: "sharex-upload",
+        description: "Rehost an image/file URL via configured ShareX uploader",
+        options: [
+          { name: "url", description: "Image or file URL to rehost", type: 3, required: true }
+        ],
+        execute: function (args) {
+          return (async function () {
+            try {
+              ensure();
+              var u = getOpt(args, "url");
+              if (!u) return { content: "Missing url" };
+              var out = await uploadUrl(String(u).trim());
+              return { content: out };
+            } catch (e) {
+              storage.lastError = String(e && e.message || e);
+              return { content: "ShareX error: " + storage.lastError };
+            }
+          })();
+        }
+      })
+    );
+
+    unreg.push(
+      reg({
+        name: "sharex-status",
+        description: "Show active ShareX uploader status",
+        options: [],
+        execute: function () {
+          return (async function () {
+            try {
+              ensure();
+              if (!storage.sxcu) return { content: "No .sxcu configured. Use /sharex-config" };
               var n = "uploader";
               try { n = JSON.parse(storage.sxcu).Name || n; } catch (e) {}
-              return { content: "Active: **" + n + "**" + (storage.lastUrl ? "\nLast: " + storage.lastUrl : "") };
+              return {
+                content:
+                  "Active: **" + n + "**" +
+                  (storage.lastUrl ? "\nLast: " + storage.lastUrl : "") +
+                  (storage.lastError ? "\nLast error: " + storage.lastError : "")
+              };
+            } catch (e) {
+              return { content: "ShareX error: " + String(e && e.message || e) };
             }
-            if (subName === "upload") {
-              if (!optMap.url) return { content: "Missing url" };
-              return { content: await uploadUrl(String(optMap.url).trim()) };
-            }
-            return { content: "Usage: /sharex config | upload | status" };
-          } catch (e) {
-            storage.lastError = String(e && e.message || e);
-            return { content: "ShareX error: " + storage.lastError };
-          }
-        })();
-      }
-    }));
+          })();
+        }
+      })
+    );
   }
 
   function Settings() {
@@ -167,7 +204,7 @@
     var children = [];
     children.push(React.createElement(Text, { key: "t", style: { margin: 16, color: "#fff", fontSize: 16, fontWeight: "700" } }, "ShareX"));
     children.push(React.createElement(Text, { key: "h", style: { marginHorizontal: 16, marginBottom: 8, color: "#aaa", fontSize: 13 } },
-      "Paste .sxcu JSON below or use /sharex config. Upload with /sharex upload."));
+      "Paste .sxcu JSON below or use /sharex-config. Upload with /sharex-upload <url>."));
     if (FormInput) {
       children.push(React.createElement(FormInput, {
         key: "sxcu", title: ".sxcu JSON", value: storage.sxcu || "",
@@ -183,12 +220,20 @@
     }
     children.push(React.createElement(Text, { key: "last", style: { margin: 16, color: "#888", fontSize: 12 } },
       "Last URL: " + (storage.lastUrl || "—") + "\nLast error: " + (storage.lastError || "—")));
+    children.push(React.createElement(Text, { key: "cmds", style: { margin: 16, color: "#666", fontSize: 12 } },
+      "Commands: /sharex-config · /sharex-upload · /sharex-status"));
     return React.createElement(ScrollView, { style: { flex: 1 } }, children);
   }
 
   var plugin = {
-    onLoad: function () { ensure(); regCmd(); try { logger.log("[ShareX] loaded"); } catch (e) {} },
-    onUnload: function () { while (unreg.length) try { unreg.pop()(); } catch (e) {} },
+    onLoad: function () {
+      ensure();
+      regCmd();
+      try { logger.log("[ShareX] v1.2.0 loaded"); } catch (e) {}
+    },
+    onUnload: function () {
+      while (unreg.length) try { unreg.pop()(); } catch (e) {}
+    },
     settings: Settings
   };
   exports.default = plugin;
