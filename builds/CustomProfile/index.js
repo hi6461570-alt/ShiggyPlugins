@@ -1,14 +1,11 @@
 (function (exports) {
   "use strict";
-  var base = "https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/builds/CustomProfile/";
-  function get(path) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", base + path + "?_=" + Date.now(), false);
-    xhr.send(null);
-    if (xhr.status < 200 || xhr.status >= 300) throw new Error("CustomProfile fetch failed: " + path + " " + xhr.status);
-    return xhr.responseText;
-  }
-  var src = get("body_0.js") + get("body_1.js") + get("body_2.js");
+  var url = "https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/c84356a1a8ccba317453ba6d6308f74ae9175166/builds/CustomProfile/index.js";
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url + "?_=" + Date.now(), false);
+  xhr.send(null);
+  if (xhr.status < 200 || xhr.status >= 300) throw new Error("CustomProfile fetch failed: " + xhr.status);
+  var src = xhr.responseText;
   var result = eval(src);
   var plugin = (result && result.default) ? result.default : result;
   exports.default = plugin;
