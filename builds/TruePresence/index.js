@@ -154,7 +154,7 @@
     onLoad: function () {
       ensure();
       install();
-      try { logger.log("[TruePresence] v1.1.0 loaded"); } catch (e) {}
+      try { logger.log("[TruePresence] v1.2.0 loaded"); } catch (e) {}
     },
     onUnload: function () {
       while (unpatches.length) try { unpatches.pop()(); } catch (e) {}
