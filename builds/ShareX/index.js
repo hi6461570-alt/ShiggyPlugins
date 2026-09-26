@@ -9,7 +9,6 @@
   var ScrollView = ReactNative.ScrollView;
   var Text = ReactNative.Text;
   var TextInput = ReactNative.TextInput;
-  var View = ReactNative.View;
   var FormInput = Forms.FormInput;
   var unreg = [];
 
@@ -27,8 +26,8 @@
 
   function jsonPath(obj, path) {
     if (!path) return null;
-    path = String(path).replace(/^\\$?\\.?/, "");
-    var parts = path.replace(/\\[(\\d+)\\]/g, ".$1").split(".").filter(Boolean);
+    path = String(path).replace(/^\$?\.?/, "");
+    var parts = path.replace(/\[(\d+)\]/g, ".$1").split(".").filter(Boolean);
     var cur = obj;
     for (var i = 0; i < parts.length; i++) {
       if (cur == null) return null;
@@ -39,7 +38,7 @@
 
   function extractUrl(sxcu, responseText) {
     var tpl = sxcu.URL || sxcu.ThumbnailURL || "";
-    var m = tpl.match(/\\{json:([^}]+)\\}/) || tpl.match(/\\$json:([^$]+)\\$/);
+    var m = tpl.match(/\{json:([^}]+)\}/) || tpl.match(/\$json:([^$]+)\$/);
     try {
       var j = JSON.parse(responseText);
       if (m) {
@@ -51,10 +50,10 @@
       if (j.data && j.data.link) return j.data.link;
       if (j.data && j.data.url) return j.data.url;
       if (j.files && j.files[0] && j.files[0].url) return j.files[0].url;
-      if (j.message && /^https?:\\/\\//.test(j.message)) return j.message;
+      if (j.message && /^https?:\/\//.test(j.message)) return j.message;
     } catch (e) {}
     var t = String(responseText || "").trim();
-    if (/^https?:\\/\\//i.test(t)) return t.split(/\\s/)[0];
+    if (/^https?:\/\//i.test(t)) return t.split(/\s/)[0];
     throw new Error("Could not parse upload URL from response");
   }
 
@@ -68,7 +67,7 @@
       var base = path.split("/").pop() || name;
       if (base.indexOf(".") > 0) name = base;
     } catch (e) {}
-    return { blob: blob, name: name, type: blob.type || "application/octet-stream" };
+    return { blob: blob, name: name };
   }
 
   async function uploadUrl(sourceUrl) {
@@ -81,8 +80,7 @@
     var form = new FormData();
     var args = sxcu.Arguments || {};
     for (var k in args) if (Object.prototype.hasOwnProperty.call(args, k)) form.append(k, args[k]);
-    var field = sxcu.FileFormName || "file";
-    form.append(field, file.blob, file.name);
+    form.append(sxcu.FileFormName || "file", file.blob, file.name);
     var url = sxcu.RequestURL;
     if (sxcu.Parameters) {
       var qs = [];
@@ -112,9 +110,9 @@
           options: [{ name: "sxcu", description: "Raw .sxcu JSON string", type: 3, required: true }] },
         { name: "upload", description: "Download URL, upload via .sxcu, send result", type: 1,
           options: [{ name: "url", description: "Image or file URL to rehost", type: 3, required: true }] },
-        { name: "status", description: "Show current uploader config name", type: 1, options: [] }
+        { name: "status", description: "Show current uploader", type: 1, options: [] }
       ],
-      execute: function (args, ctx) {
+      execute: function (args) {
         ensure();
         return (async function () {
           try {
@@ -143,15 +141,13 @@
               if (!storage.sxcu) return { content: "No .sxcu configured." };
               var n = "uploader";
               try { n = JSON.parse(storage.sxcu).Name || n; } catch (e) {}
-              return { content: "Active ShareX uploader: **" + n + "**" + (storage.lastUrl ? "\nLast URL: " + storage.lastUrl : "") };
+              return { content: "Active: **" + n + "**" + (storage.lastUrl ? "\nLast: " + storage.lastUrl : "") };
             }
             if (subName === "upload") {
-              var src = optMap.url;
-              if (!src) return { content: "Missing url option" };
-              var uploaded = await uploadUrl(String(src).trim());
-              return { content: uploaded };
+              if (!optMap.url) return { content: "Missing url" };
+              return { content: await uploadUrl(String(optMap.url).trim()) };
             }
-            return { content: "Usage: `/sharex config` · `/sharex upload` · `/sharex status`" };
+            return { content: "Usage: /sharex config | upload | status" };
           } catch (e) {
             storage.lastError = String(e && e.message || e);
             return { content: "ShareX error: " + storage.lastError };
@@ -168,8 +164,7 @@
     var children = [];
     children.push(React.createElement(Text, { key: "t", style: { margin: 16, color: "#fff", fontSize: 16, fontWeight: "700" } }, "ShareX"));
     children.push(React.createElement(Text, { key: "h", style: { marginHorizontal: 16, marginBottom: 8, color: "#aaa", fontSize: 13 } },
-      "Paste a full .sxcu JSON below, or use /sharex config. Then /sharex upload with a url."
-    ));
+      "Paste .sxcu JSON below or use /sharex config. Upload with /sharex upload."));
     if (FormInput) {
       children.push(React.createElement(FormInput, {
         key: "sxcu", title: ".sxcu JSON", value: storage.sxcu || "",
@@ -193,7 +188,6 @@
     onUnload: function () { while (unreg.length) try { unreg.pop()(); } catch (e) {} },
     settings: Settings
   };
-
   exports.default = plugin;
   try { Object.defineProperty(exports, "__esModule", { value: true }); } catch (e) {}
   return exports;
