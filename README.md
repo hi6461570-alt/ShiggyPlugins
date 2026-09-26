@@ -1,0 +1,2 @@
+# ShiggyPlugins
+Plugins for ShiggyCord
