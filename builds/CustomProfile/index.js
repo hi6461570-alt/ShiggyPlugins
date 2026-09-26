@@ -1,5 +1,6 @@
 (function (exports) {
   "use strict";
+  // shiggy-monorepo restore 2.5.1
   var storage = vendetta.plugin.storage;
   var after = vendetta.patcher.after;
   var before = vendetta.patcher.before;
@@ -249,6 +250,7 @@
         user.avatar = storage.avatar;
       }
 
+      // Always set publicFlags from our selection when managing badges
       var bf = getBadgeFlags();
       if (storage.hideRealBadges || bf) {
         user.publicFlags = bf;
@@ -324,11 +326,13 @@
         } catch (e) {}
       }
 
+      // THIS is what mobile profile UI actually paints
       var built = buildBadgesArray();
       if (storage.hideRealBadges) {
         profile.badges = built;
       } else {
         var existing = Array.isArray(profile.badges) ? profile.badges.slice() : [];
+        // strip ones we manage, then append ours
         var managedIds = {};
         for (var i = 0; i < BADGES.length; i++) managedIds[BADGES[i].id] = true;
         for (var j = 0; j < NITRO_LEVELS.length; j++) managedIds[NITRO_LEVELS[j].id] = true;
@@ -498,8 +502,11 @@
     } catch (e) {}
   }
 
+  // --- Settings ---
+
   function Settings() {
     useProxy(storage);
+    // Force re-render when cycling numbers (useProxy can miss pure number toggles)
     var tick = React.useReducer(function (x) { return x + 1; }, 0);
     var bump = tick[1];
 
@@ -755,7 +762,7 @@
     children.push(React.createElement(Text, {
       key: "foot",
       style: { margin: 16, opacity: 0.5, fontSize: 12, textAlign: "center", color: "#888" }
-    }, "CustomProfile v2.5.0 — rebuilds profile.badges (mobile)"));
+    }, "CustomProfile v2.5.1 — rebuilds profile.badges (mobile)"));
 
     return React.createElement(ScrollView, { style: { flex: 1 } }, children);
   }
@@ -769,7 +776,7 @@
       }
       installPatches();
       try {
-        logger.log("[CustomProfile] v2.5.0 loaded selfId=" + cachedSelfId + " flags=" + getBadgeFlags() + " nitroLevel=" + storage.nitroLevel);
+        logger.log("[CustomProfile] v2.5.1 loaded selfId=" + cachedSelfId + " flags=" + getBadgeFlags() + " nitroLevel=" + storage.nitroLevel);
       } catch (e) {}
     },
     onUnload: function () {
