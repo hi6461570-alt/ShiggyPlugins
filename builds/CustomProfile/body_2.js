@@ -1,37 +1,27 @@
-    try {
-      if (unregSection) { try { unregSection(); } catch (e) {} unregSection = null; }
-      var mod = safeFind(function () { return findByProps("registerSection"); });
-      if (!mod || !mod.registerSection) {
-        try {
-          if (typeof window !== "undefined") {
-            if (window.bunny && window.bunny.settings && window.bunny.settings.registerSection)
-              mod = window.bunny.settings;
-            else if (window.shiggycord && window.shiggycord.settings && window.shiggycord.settings.registerSection)
-              mod = window.shiggycord.settings;
-          }
-        } catch (e) {}
-      }
-      if (!mod || !mod.registerSection) {
-        try { logger.log("[CustomProfile] registerSection not available"); } catch (e) {}
-        return;
-      }
-      unregSection = mod.registerSection({
-        name: "CustomProfile",
-        items: [
-          {
-            key: "CUSTOM_PROFILE_LARP",
-            title: function () { return "Custom Profile"; },
-            icon: null,
-            render: function () {
-              return Promise.resolve({ default: Settings });
+                if (row.message.nick != null) row.message.nick = storage.globalName;
+              } else if (storage.username) row.message.username = storage.username;
             }
-          }
-        ]
-      });
-      try { logger.log("[CustomProfile] Discord settings tab registered"); } catch (e) {}
-    } catch (e) {
-      try { logger.log("[CustomProfile] settings tab failed: " + e); } catch (e2) {}
-    }
+            args[1] = JSON.stringify(rows);
+          } catch (e) {}
+        }));
+      }
+    } catch (e) {}
+
+    try {
+      var CAS = safeFind(function () { return findByProps("getAccounts", "getLocalAccounts"); })
+        || safeFind(function () { return findByProps("getAccounts"); });
+      if (CAS && CAS.getAccounts) {
+        unpatches.push(after("getAccounts", CAS, function (_, res) {
+          if (!storage.enabled) return res;
+          var tid = targetId();
+          if (!tid || !cachedSelfId || tid !== cachedSelfId) return res;
+          var fake = formatConnections();
+          if (!fake.length && !storage.hideRealConnections) return res;
+          var base = storage.hideRealConnections ? [] : (Array.isArray(res) ? res.slice() : []);
+          return base.concat(fake);
+        }));
+      }
+    } catch (e) {}
   }
 
   function Settings() {
@@ -238,7 +228,7 @@
 
     children.push(React.createElement(Text, {
       key: "foot", style: { margin: 16, opacity: 0.5, fontSize: 12, textAlign: "center", color: "#888" }
-    }, "CustomProfile v2.7.0 — also in Discord Settings"));
+    }, "CustomProfile v2.6.1"));
 
     return React.createElement(ScrollView, { style: { flex: 1 } }, children);
   }
@@ -251,12 +241,10 @@
         storage.badgeFlags = isNaN(parsed) ? 0 : parsed;
       }
       installPatches();
-      registerSettingsTab();
-      try { logger.log("[CustomProfile] v2.7.0 loaded"); } catch (e) {}
+      try { logger.log("[CustomProfile] v2.6.1 loaded"); } catch (e) {}
     },
     onUnload: function () {
       uninstallPatches();
-      if (unregSection) { try { unregSection(); } catch (e) {} unregSection = null; }
       try { logger.log("[CustomProfile] unloaded"); } catch (e) {}
     },
     settings: Settings
