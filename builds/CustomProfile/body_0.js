@@ -195,3 +195,19 @@
     if (storage.connections == null) storage.connections = [];
     if (storage.hideRealConnections == null) storage.hideRealConnections = false;
     if (storage.draftConnType == null) storage.draftConnType = 0;
+    if (storage.draftConnName == null) storage.draftConnName = "";
+  }
+
+  function resolveSelfIdSafe() {
+    try {
+      var us = findUserStore();
+      var me = us && us.getCurrentUser ? us.getCurrentUser() : null;
+      if (me && me.id != null) cachedSelfId = String(me.id);
+    } catch (e) {}
+    return cachedSelfId;
+  }
+  function targetId() {
+    var t = storage.targetId;
+    if (t && String(t).trim()) return String(t).trim();
+    return cachedSelfId;
+  }
