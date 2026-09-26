@@ -2,72 +2,40 @@
 
 Plugins for **ShiggyCord** (Vendetta / Bunny / Kettu / Revenge compatible).
 
----
+## Install
 
-## How to install a plugin
+Settings → Plugins → paste a URL ending in `/`:
 
-1. Open Discord with ShiggyCord.
-2. Go to **Settings → Plugins**.
-3. Paste a **plugin URL** (must end with `/`) and install.
-4. Enable the plugin, then open it → **Configure** (gear) if it has settings.
+| Plugin | URL |
+|--------|-----|
+| CustomProfile | `https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/builds/CustomProfile/` |
+| ShareX | `https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/builds/ShareX/` |
+| ShowBadgesInChat | `https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/builds/ShowBadgesInChat/` |
+| TruePresence | `https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/builds/TruePresence/` |
 
-### CustomProfile install URL
+## Plugins
 
-```
-https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/builds/CustomProfile/
-```
+### CustomProfile `2.7.0`
+Local profile larp — identity, nitro/boost badges, classic badges, connections. Tabbed settings UI (General / Look / Nitro / Badges / Links).
 
-Remove any old CustomProfile install first if the hash/URL changed.
+### ShareX `1.0.0`
+Import a ShareX `.sxcu` custom uploader and rehost images via built-in commands:
+- `/sharex config` — paste `.sxcu` JSON
+- `/sharex upload` — download URL → upload via sxcu → send resulting link
+- `/sharex status` — active uploader name
 
-> **Note:** Do **not** paste `repo.json` as a Vendetta plugin URL. That file is only for Bunny-style plugin repositories. CustomProfile is a Vendetta-format plugin.
+### ShowBadgesInChat `1.0.0`
+Shows classic profile badges next to usernames in chat (local).
 
-Optional Bunny repo URL (for clients that browse plugin repos):
+### TruePresence `1.0.0`
+Locally reveal users who appear offline/invisible but are in voice, have activities, or active client sessions.
 
-```
-https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/repo.json
-```
-
----
-
-## Current plugins
-
-| Plugin | Version | Description |
-|--------|---------|-------------|
-| **CustomProfile** | 2.6.0 | Local-only profile larp (identity, badges, nitro, boost, connections) |
-
----
-
-## CustomProfile — features
-
-Local-only (only you see the changes):
-
-| Area | What you can larp |
-|------|-------------------|
-| **Identity** | Username, display name, bio, pronouns, account creation date |
-| **Look** | Avatar URL, banner URL, accent color |
-| **Nitro** | Simulate Nitro + tenure badge tiers (Bronze → Opal) |
-| **Boost** | Server boost badge (1–24 months) |
-| **Classic badges** | Staff, Partner, HypeSquad, Bug Hunter, Early Supporter, Active Dev, etc. |
-| **Hide real badges** | Replace `profile.badges` with your selection |
-| **Connections** | Fake profile connections (Steam, Xbox, PSN, Spotify, GitHub, X, TikTok, Riot, Epic, Roblox, domain, and more) |
-| **Hide real connections** | Replace real connected accounts with fakes only |
-| **Target** | Optional target user ID (default: you) |
-
-Inspired by Nightcord CustomProfile; built for ShiggyCord’s Vendetta eval (`exports.default = { onLoad, onUnload, settings }`).
-
----
-
-## Repo layout
+## Layout
 
 ```
 repo.json
-builds/
-  CustomProfile/
-    manifest.json
-    index.js
-README.md
+builds/<Plugin>/manifest.json
+builds/<Plugin>/index.js
 ```
-
-Add another plugin: create `builds/<Name>/` + entry in `repo.json`.
 
 > Vibecoded w/ Grok <3
