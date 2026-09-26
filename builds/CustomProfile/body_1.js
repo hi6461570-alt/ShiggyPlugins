@@ -1,3 +1,21 @@
+    if (storage.draftConnName == null) storage.draftConnName = "";
+  }
+
+  function resolveSelfIdSafe() {
+    try {
+      var us = findUserStore();
+      var me = us && us.getCurrentUser ? us.getCurrentUser() : null;
+      if (me && me.id != null) cachedSelfId = String(me.id);
+    } catch (e) {}
+    return cachedSelfId;
+  }
+  function targetId() {
+    var t = storage.targetId;
+    if (t && String(t).trim()) return String(t).trim();
+    return cachedSelfId;
+  }
+  function isTarget(id) {
+    if (!storage.enabled) return false;
     var tid = targetId();
     if (!tid || id == null) return false;
     return String(id) === tid;
@@ -242,31 +260,3 @@
               if (storage.avatar && /^https?:\/\//i.test(String(storage.avatar))) row.message.avatarURL = storage.avatar;
               if (storage.globalName) {
                 row.message.username = storage.globalName;
-                if (row.message.nick != null) row.message.nick = storage.globalName;
-              } else if (storage.username) row.message.username = storage.username;
-            }
-            args[1] = JSON.stringify(rows);
-          } catch (e) {}
-        }));
-      }
-    } catch (e) {}
-
-    try {
-      var CAS = safeFind(function () { return findByProps("getAccounts", "getLocalAccounts"); })
-        || safeFind(function () { return findByProps("getAccounts"); });
-      if (CAS && CAS.getAccounts) {
-        unpatches.push(after("getAccounts", CAS, function (_, res) {
-          if (!storage.enabled) return res;
-          var tid = targetId();
-          if (!tid || !cachedSelfId || tid !== cachedSelfId) return res;
-          var fake = formatConnections();
-          if (!fake.length && !storage.hideRealConnections) return res;
-          var base = storage.hideRealConnections ? [] : (Array.isArray(res) ? res.slice() : []);
-          return base.concat(fake);
-        }));
-      }
-    } catch (e) {}
-  }
-
-  var unregSection = null;
-  function registerSettingsTab() {
