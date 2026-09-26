@@ -1,6 +1,6 @@
 (function (exports) {
   "use strict";
-  // CustomProfile v2.6.0 — connections larp
+  // CustomProfile v2.6.1 — connections UI fix
   var storage = vendetta.plugin.storage;
   var after = vendetta.patcher.after;
   var before = vendetta.patcher.before;
@@ -26,18 +26,9 @@
   var FormSection = Forms.FormSection;
 
   var FLAG = {
-    STAFF: 1 << 0,
-    PARTNER: 1 << 1,
-    HYPESQUAD: 1 << 2,
-    BUG_HUNTER_1: 1 << 3,
-    BRAVERY: 1 << 6,
-    BRILLIANCE: 1 << 7,
-    BALANCE: 1 << 8,
-    EARLY_SUPPORTER: 1 << 9,
-    BUG_HUNTER_2: 1 << 14,
-    DEV_VERIFIED: 1 << 17,
-    MOD_ALUMNI: 1 << 18,
-    ACTIVE_DEVELOPER: 1 << 22
+    STAFF: 1 << 0, PARTNER: 1 << 1, HYPESQUAD: 1 << 2, BUG_HUNTER_1: 1 << 3,
+    BRAVERY: 1 << 6, BRILLIANCE: 1 << 7, BALANCE: 1 << 8, EARLY_SUPPORTER: 1 << 9,
+    BUG_HUNTER_2: 1 << 14, DEV_VERIFIED: 1 << 17, MOD_ALUMNI: 1 << 18, ACTIVE_DEVELOPER: 1 << 22
   };
 
   var BADGES = [
@@ -129,29 +120,23 @@
   }
 
   function getConnections() {
-    var list = storage.connections;
-    if (!Array.isArray(list)) return [];
-    return list.filter(function (c) { return c && c.type && c.name; });
+    try {
+      var list = storage.connections;
+      if (!Array.isArray(list)) return [];
+      return list.filter(function (c) { return c && c.type && String(c.name || "").trim(); });
+    } catch (e) { return []; }
   }
 
   function formatConnections() {
     return getConnections().map(function (c) {
       var url = c.url || defaultConnUrl(c.type, c.name);
       var obj = {
-        type: c.type,
-        id: String(c.name),
-        name: String(c.name),
-        verified: c.verified !== false,
-        visibility: 1,
-        show_activity: false,
-        showActivity: false,
-        friend_sync: false,
-        friendSync: false,
-        metadata_visibility: 0,
-        metadataVisibility: 0,
-        two_way_link: false,
-        twoWayLink: false,
-        metadata: {}
+        type: c.type, id: String(c.name), name: String(c.name),
+        verified: c.verified !== false, visibility: 1,
+        show_activity: false, showActivity: false,
+        friend_sync: false, friendSync: false,
+        metadata_visibility: 0, metadataVisibility: 0,
+        two_way_link: false, twoWayLink: false, metadata: {}
       };
       if (url) obj.url = url;
       return obj;
@@ -161,9 +146,7 @@
   var unpatches = [];
   var cachedSelfId = null;
 
-  function safeFind(fn) {
-    try { return fn(); } catch (e) { return null; }
-  }
+  function safeFind(fn) { try { return fn(); } catch (e) { return null; } }
   function findUserStore() {
     return safeFind(function () { return findByStoreName("UserStore"); })
       || safeFind(function () { return findByProps("getCurrentUser", "getUser"); })
@@ -223,57 +206,44 @@
     } catch (e) {}
     return cachedSelfId;
   }
-
   function targetId() {
     var t = storage.targetId;
     if (t && String(t).trim()) return String(t).trim();
     return cachedSelfId;
   }
-
   function isTarget(id) {
     if (!storage.enabled) return false;
     var tid = targetId();
     if (!tid || id == null) return false;
     return String(id) === tid;
   }
-
   function getBadgeFlags() {
     var n = Number(storage.badgeFlags);
     return isNaN(n) ? 0 : (n >>> 0);
   }
-
   function monthsAgoISO(months) {
     var d = new Date();
     d.setMonth(d.getMonth() - (months || 0));
     d.setDate(d.getDate() - 2);
     return d.toISOString();
   }
-
   function nitroSinceISO() {
     if (storage.premiumSince && String(storage.premiumSince).trim()) {
-      try {
-        var d = new Date(storage.premiumSince);
-        if (!isNaN(d.getTime())) return d.toISOString();
-      } catch (e) {}
+      try { var d = new Date(storage.premiumSince); if (!isNaN(d.getTime())) return d.toISOString(); } catch (e) {}
     }
     var level = Number(storage.nitroLevel);
     if (isNaN(level) || level < 0) level = 0;
     if (level >= NITRO_LEVELS.length) level = NITRO_LEVELS.length - 1;
     return monthsAgoISO(NITRO_LEVELS[level].months);
   }
-
   function boostSinceISO() {
     var level = Number(storage.boostLevel);
     if (isNaN(level) || level < 0 || level >= BOOST_LEVELS.length) return null;
     return monthsAgoISO(BOOST_LEVELS[level].months);
   }
-
   function formatSince(iso) {
-    try {
-      return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-    } catch (e) {
-      return iso;
-    }
+    try { return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
+    catch (e) { return iso; }
   }
 
   function buildBadgesArray() {
@@ -281,23 +251,19 @@
     var bf = getBadgeFlags();
     for (var i = 0; i < BADGES.length; i++) {
       var b = BADGES[i];
-      if (bf & b.flag) {
-        out.push({ id: b.id, description: b.label, icon: b.icon, link: b.link });
-      }
+      if (bf & b.flag) out.push({ id: b.id, description: b.label, icon: b.icon, link: b.link });
     }
     if (storage.nitro) {
       var nl = Number(storage.nitroLevel);
       if (isNaN(nl) || nl < 0) nl = 0;
       if (nl >= NITRO_LEVELS.length) nl = NITRO_LEVELS.length - 1;
       var nt = NITRO_LEVELS[nl];
-      var since = nitroSinceISO();
-      out.push({ id: nt.id, description: "Subscriber since " + formatSince(since), icon: nt.icon, link: "https://discord.com/settings/premium" });
+      out.push({ id: nt.id, description: "Subscriber since " + formatSince(nitroSinceISO()), icon: nt.icon, link: "https://discord.com/settings/premium" });
     }
     var bl = Number(storage.boostLevel);
     if (!isNaN(bl) && bl >= 0 && bl < BOOST_LEVELS.length) {
       var bt = BOOST_LEVELS[bl];
-      var bSince = boostSinceISO();
-      out.push({ id: bt.id, description: "Server boosting since " + formatSince(bSince), icon: bt.icon, link: "https://discord.com/settings/premium" });
+      out.push({ id: bt.id, description: "Server boosting since " + formatSince(boostSinceISO()), icon: bt.icon, link: "https://discord.com/settings/premium" });
     }
     return out;
   }
@@ -394,7 +360,6 @@
     try { var us = findUserStore(); if (us && us.emitChange) us.emitChange(); } catch (e) {}
     try { var ps = findUserProfileStore(); if (ps && ps.emitChange) ps.emitChange(); } catch (e) {}
   }
-
   function uninstallPatches() {
     while (unpatches.length) { try { unpatches.pop()(); } catch (e) {} }
   }
@@ -402,7 +367,6 @@
   function installPatches() {
     uninstallPatches();
     resolveSelfIdSafe();
-
     var UserStore = findUserStore();
     if (UserStore && UserStore.getCurrentUser) {
       unpatches.push(after("getCurrentUser", UserStore, function (_, res) {
@@ -413,12 +377,10 @@
     if (UserStore && UserStore.getUser) {
       unpatches.push(after("getUser", UserStore, function (_, res) { return applyToUser(res); }));
     }
-
     var ProfileStore = findUserProfileStore();
     if (ProfileStore && ProfileStore.getUserProfile) {
       unpatches.push(after("getUserProfile", ProfileStore, function (_, res) { return applyToProfile(res); }));
     }
-
     var avatarStuff = findAvatarStuff();
     if (avatarStuff && avatarStuff.getUserAvatarURL) {
       unpatches.push(after("getUserAvatarURL", avatarStuff, function (args, res) {
@@ -436,7 +398,6 @@
         return res;
       }));
     }
-
     var bannerStuff = findBannerStuff();
     if (bannerStuff && bannerStuff.getUserBannerURL) {
       unpatches.push(after("getUserBannerURL", bannerStuff, function (args, res) {
@@ -447,7 +408,6 @@
         return res;
       }));
     }
-
     var nameStuff = findDisplayNameStuff();
     if (nameStuff && nameStuff.getDisplayName) {
       unpatches.push(after("getDisplayName", nameStuff, function (args, res) {
@@ -463,7 +423,6 @@
         return storage.globalName || storage.username || res;
       }));
     }
-
     var snow = findSnowflakeUtils();
     if (snow && snow.extractTimestamp) {
       unpatches.push(after("extractTimestamp", snow, function (args, res) {
@@ -475,7 +434,6 @@
         return res;
       }));
     }
-
     var prem = findPremiumUtils();
     if (prem && prem.isPremium) {
       unpatches.push(after("isPremium", prem, function (args, res) {
@@ -489,7 +447,6 @@
         return true;
       }));
     }
-
     try {
       var DCDChatManager = ReactNative.NativeModules && ReactNative.NativeModules.DCDChatManager;
       if (DCDChatManager && DCDChatManager.updateRows) {
@@ -515,7 +472,6 @@
         }));
       }
     } catch (e) {}
-
     try {
       var CAS = safeFind(function () { return findByProps("getAccounts", "getLocalAccounts"); })
         || safeFind(function () { return findByProps("getAccounts"); });
@@ -534,6 +490,7 @@
   }
 
   function Settings() {
+    try { ensureDefaults(); } catch (e) {}
     useProxy(storage);
     var tick = React.useReducer(function (x) { return x + 1; }, 0);
     var bump = tick[1];
@@ -541,10 +498,13 @@
     var children = [];
 
     function sectionTitle(title) {
-      if (FormSection) return React.createElement(FormSection, { key: "sec-" + title, title: title });
       return React.createElement(Text, {
         key: "sec-" + title,
-        style: { marginHorizontal: 16, marginTop: 18, marginBottom: 6, fontSize: 13, fontWeight: "700", opacity: 0.6, color: "#aaa", textTransform: "uppercase" }
+        style: {
+          marginHorizontal: 16, marginTop: 20, marginBottom: 8,
+          fontSize: 13, fontWeight: "700", color: "#b5bac1",
+          textTransform: "uppercase", letterSpacing: 0.5
+        }
       }, title);
     }
     function field(key, label, placeholder) {
@@ -594,13 +554,10 @@
           else storage.badgeFlags = (f | badge.flag) >>> 0;
         });
       }
-      var leading = null;
-      if (Image) {
-        leading = React.createElement(Image, {
-          source: { uri: "https://cdn.discordapp.com/badge-icons/" + badge.icon + ".png" },
-          style: { width: 22, height: 22 }
-        });
-      }
+      var leading = Image ? React.createElement(Image, {
+        source: { uri: "https://cdn.discordapp.com/badge-icons/" + badge.icon + ".png" },
+        style: { width: 22, height: 22 }
+      }) : null;
       if (FormRow && FormSwitch) {
         return React.createElement(FormRow, {
           key: "badge-" + badge.key, label: badge.label, leading: leading,
@@ -641,81 +598,16 @@
     children.push(switchRow("hideRealBadges", "Hide real badges", "Replace profile.badges entirely with your selection (recommended)"));
     children.push(field("targetId", "Target user ID (empty = you)", "Leave empty to larp yourself"));
 
-    children.push(sectionTitle("Identity"));
-    children.push(field("username", "Username", "Custom username"));
-    children.push(field("globalName", "Display name", "Custom display name"));
-    children.push(field("bio", "Bio", "Custom bio"));
-    children.push(field("pronouns", "Pronouns", "he/him, they/them, ..."));
-    children.push(field("createdAt", "Account creation date", "YYYY-MM-DD"));
-
-    children.push(sectionTitle("Aesthetics"));
-    children.push(field("avatar", "Avatar URL", "https://..."));
-    children.push(field("banner", "Banner URL", "https://..."));
-
-    var accentDisplay = storage.accentColor != null && storage.accentColor !== ""
-      ? Number(storage.accentColor).toString(16).padStart(6, "0") : "";
-    if (FormInput) {
-      children.push(React.createElement(FormInput, {
-        key: "accent", title: "Accent color (hex, no #)", value: accentDisplay, placeholder: "5865f2",
-        onChange: function (t) {
-          var h = String(t || "").replace("#", "");
-          var n = parseInt(h, 16);
-          storage.accentColor = !isNaN(n) && h.length === 6 ? n : "";
-          bump();
-        },
-        onChangeText: function (t) {
-          var h = String(t || "").replace("#", "");
-          var n = parseInt(h, 16);
-          storage.accentColor = !isNaN(n) && h.length === 6 ? n : "";
-          bump();
-        }
-      }));
-    }
-
-    children.push(sectionTitle("Nitro badge"));
-    children.push(switchRow("nitro", "Simulate Nitro", "Adds Nitro badge to profile.badges + premiumType"));
-    var nl = Number(storage.nitroLevel);
-    if (isNaN(nl) || nl < 0) nl = 0;
-    if (nl >= NITRO_LEVELS.length) nl = NITRO_LEVELS.length - 1;
-    children.push(cycleRow("Nitro tier: " + NITRO_LEVELS[nl].label, "Tap to cycle · changes badge icon on profile", function () {
-      setAndBump(function () {
-        var cur = Number(storage.nitroLevel);
-        if (isNaN(cur) || cur < 0) cur = 0;
-        storage.nitroLevel = (cur + 1) % NITRO_LEVELS.length;
-        storage.premiumSince = "";
-        storage.nitro = true;
-      });
-    }));
-    children.push(field("premiumSince", "Premium since override (optional)", "YYYY-MM-DD — leave empty to use tier"));
-
-    children.push(sectionTitle("Boost badge"));
-    var bl = Number(storage.boostLevel);
-    var boostLabel = (isNaN(bl) || bl < 0) ? "None" : (BOOST_LEVELS[bl] ? BOOST_LEVELS[bl].label : "None");
-    children.push(cycleRow("Boost: " + boostLabel, "Tap to cycle · None → 1mo → … → 24mo", function () {
-      setAndBump(function () {
-        var cur = Number(storage.boostLevel);
-        if (isNaN(cur)) cur = -1;
-        if (cur >= BOOST_LEVELS.length - 1) storage.boostLevel = -1;
-        else storage.boostLevel = cur + 1;
-      });
-    }));
-
-    children.push(sectionTitle("Classic badges"));
-    children.push(React.createElement(Text, {
-      key: "badge-help", style: { marginHorizontal: 16, marginBottom: 8, fontSize: 12, color: "#888" }
-    }, "These appear on your profile when Hide real badges is on."));
-    for (var bi = 0; bi < BADGES.length; bi++) children.push(badgeToggle(BADGES[bi]));
-
-    children.push(sectionTitle("Connections (profile)"));
+    children.push(sectionTitle("Connections"));
     children.push(switchRow("hideRealConnections", "Hide real connections", "Replace profile connections with fakes only"));
-    var conns = getConnections();
     children.push(React.createElement(Text, {
       key: "conn-help", style: { marginHorizontal: 16, marginBottom: 6, fontSize: 12, color: "#888" }
-    }, conns.length + " fake connection(s). Local only."));
+    }, getConnections().length + " fake connection(s). Cycle type, type a name, tap Add."));
+    var conns = getConnections();
     for (var ci = 0; ci < conns.length; ci++) {
       (function (idx) {
         var c = conns[idx];
-        children.push(cycleRow((c.type || "?") + ": " + (c.name || ""), "Tap to remove", function () {
+        children.push(cycleRow("★ " + (c.type || "?") + ": " + (c.name || ""), "Tap to remove", function () {
           setAndBump(function () {
             var list = getConnections().slice();
             list.splice(idx, 1);
@@ -736,7 +628,7 @@
       });
     }));
     children.push(field("draftConnName", "Connection username / handle", dType.placeholder));
-    children.push(action("Add connection", function () {
+    children.push(action("➕ Add connection", function () {
       setAndBump(function () {
         var name = String(storage.draftConnName || "").trim();
         if (!name) return;
@@ -748,6 +640,48 @@
         storage.draftConnName = "";
       });
     }));
+
+    children.push(sectionTitle("Identity"));
+    children.push(field("username", "Username", "Custom username"));
+    children.push(field("globalName", "Display name", "Custom display name"));
+    children.push(field("bio", "Bio", "Custom bio"));
+    children.push(field("pronouns", "Pronouns", "he/him, they/them, ..."));
+    children.push(field("createdAt", "Account creation date", "YYYY-MM-DD"));
+
+    children.push(sectionTitle("Aesthetics"));
+    children.push(field("avatar", "Avatar URL", "https://..."));
+    children.push(field("banner", "Banner URL", "https://..."));
+
+    children.push(sectionTitle("Nitro badge"));
+    children.push(switchRow("nitro", "Simulate Nitro", "Adds Nitro badge to profile.badges + premiumType"));
+    var nl = Number(storage.nitroLevel);
+    if (isNaN(nl) || nl < 0) nl = 0;
+    if (nl >= NITRO_LEVELS.length) nl = NITRO_LEVELS.length - 1;
+    children.push(cycleRow("Nitro tier: " + NITRO_LEVELS[nl].label, "Tap to cycle", function () {
+      setAndBump(function () {
+        var cur = Number(storage.nitroLevel);
+        if (isNaN(cur) || cur < 0) cur = 0;
+        storage.nitroLevel = (cur + 1) % NITRO_LEVELS.length;
+        storage.premiumSince = "";
+        storage.nitro = true;
+      });
+    }));
+    children.push(field("premiumSince", "Premium since override (optional)", "YYYY-MM-DD"));
+
+    children.push(sectionTitle("Boost badge"));
+    var bl = Number(storage.boostLevel);
+    var boostLabel = (isNaN(bl) || bl < 0) ? "None" : (BOOST_LEVELS[bl] ? BOOST_LEVELS[bl].label : "None");
+    children.push(cycleRow("Boost: " + boostLabel, "Tap to cycle", function () {
+      setAndBump(function () {
+        var cur = Number(storage.boostLevel);
+        if (isNaN(cur)) cur = -1;
+        if (cur >= BOOST_LEVELS.length - 1) storage.boostLevel = -1;
+        else storage.boostLevel = cur + 1;
+      });
+    }));
+
+    children.push(sectionTitle("Classic badges"));
+    for (var bi = 0; bi < BADGES.length; bi++) children.push(badgeToggle(BADGES[bi]));
 
     children.push(sectionTitle("Actions"));
     children.push(action("Apply / Refresh", function () { installPatches(); forceRerender(); bump(); }));
@@ -763,7 +697,7 @@
 
     children.push(React.createElement(Text, {
       key: "foot", style: { margin: 16, opacity: 0.5, fontSize: 12, textAlign: "center", color: "#888" }
-    }, "CustomProfile v2.6.0 — badges + connections"));
+    }, "CustomProfile v2.6.1 — Connections under General"));
 
     return React.createElement(ScrollView, { style: { flex: 1 } }, children);
   }
@@ -776,7 +710,7 @@
         storage.badgeFlags = isNaN(parsed) ? 0 : parsed;
       }
       installPatches();
-      try { logger.log("[CustomProfile] v2.6.0 loaded"); } catch (e) {}
+      try { logger.log("[CustomProfile] v2.6.1 loaded"); } catch (e) {}
     },
     onUnload: function () {
       uninstallPatches();
