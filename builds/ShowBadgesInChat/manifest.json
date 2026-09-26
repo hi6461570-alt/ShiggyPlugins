@@ -1,9 +1,9 @@
 {
   "name": "ShowBadgesInChat",
-  "description": "Show every profile badge next to usernames in guilds, DMs, and groups",
+  "description": "Show profile badges next to usernames in guilds, DMs, and groups",
   "authors": [{"name": "fratboys", "id": "0"}],
   "main": "index.js",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "vendetta": {"icon": "ic_person_shield_24px"},
-  "hash": "9910f19d3a539f322a1a6d0ad61b627df8263be655ea1b7a544793686e6807d7"
+  "hash": "14a022a473367e9611ac81eae4cc0eedce292613b2a248250478c7719999ecc3"
 }
