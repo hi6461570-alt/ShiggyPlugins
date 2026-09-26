@@ -2,40 +2,34 @@
 
 Multi-plugin repo for **ShiggyCord** / Bunny / Kettu / Vendetta / Revenge.
 
-## Install repository
+## Install CustomProfile (Vendetta / ShiggyCord)
 
-Paste this as a **plugin repository** URL:
-
-```
-https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/repo.json
-```
-
-Or install a single plugin by URL:
+Use this as a **plugin URL** (not a Bunny repository):
 
 ```
 https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/builds/CustomProfile/
 ```
 
-## Plugins
+Must end with `/`. Remove any old CustomProfile install first, then paste the URL above.
 
-| Plugin | Description | Version |
-|--------|-------------|---------|
-| **CustomProfile** | Larp plugin for Shiggy ;) | 2.5.0 |
+Open the plugin → **Configure** (gear).
 
-### CustomProfile
+> Do **not** install `repo.json` as a Vendetta plugin URL — that is only for Bunny-style plugin repositories. CustomProfile is a Vendetta-format plugin (`vendetta=>{...}` IIFE with `settings`).
 
-Local-only identity larp (username, display name, avatar, banner, bio, pronouns, nitro/boost badges, classic badges). Open the plugin → **Configure**.
+## Bunny-style repository (optional)
+
+```
+https://raw.githubusercontent.com/hi6461570-alt/ShiggyPlugins/main/repo.json
+```
+
+Only use this if your client browses Bunny plugin repos. CustomProfile still runs as Vendetta JS.
 
 ## Layout
 
 ```
-repo.json                 # multi-plugin registry
-builds/
-  CustomProfile/
-    manifest.json
-    index.js
+repo.json
+builds/CustomProfile/manifest.json
+builds/CustomProfile/index.js
 ```
-
-Add another plugin by creating `builds/<Name>/` and an entry in `repo.json`.
 
 > Vibecoded w/ Grok <3
