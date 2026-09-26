@@ -3,7 +3,7 @@
   "description": "Larp plugin for Shiggy ;)",
   "authors": [{"name": "fratboys", "id": "0"}],
   "main": "index.js",
-  "version": "2.7.0",
+  "version": "2.6.1",
   "vendetta": {"icon": "ic_profile_24px"},
-  "hash": "17dacb793c104063125982a2e0f6a72b0ba87bcbc7b006877b425d5e016b9f47"
+  "hash": "a94a87ef9f06a1cb7a829349fdb873614403bb0566aacc876ad9ba50e92869c9"
 }
