@@ -26,10 +26,13 @@
 
   function jsonPath(obj, path) {
     if (!path) return null;
-    path = String(path).replace(/^\$?\.?/, "");
-    var parts = path.replace(/\[(\d+)\]/g, ".$1").split(".").filter(Boolean);
+    var p = String(path);
+    if (p.charAt(0) === "$") p = p.slice(1);
+    if (p.charAt(0) === ".") p = p.slice(1);
+    var parts = p.replace(/\[(\d+)\]/g, ".$1").split(".");
     var cur = obj;
     for (var i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue;
       if (cur == null) return null;
       cur = cur[parts[i]];
     }
@@ -38,7 +41,7 @@
 
   function extractUrl(sxcu, responseText) {
     var tpl = sxcu.URL || sxcu.ThumbnailURL || "";
-    var m = tpl.match(/\{json:([^}]+)\}/) || tpl.match(/\$json:([^$]+)\$/);
+    var m = /\{json:([^}]+)\}/.exec(tpl) || /\$json:([^$]+)\$/.exec(tpl);
     try {
       var j = JSON.parse(responseText);
       if (m) {
@@ -50,10 +53,10 @@
       if (j.data && j.data.link) return j.data.link;
       if (j.data && j.data.url) return j.data.url;
       if (j.files && j.files[0] && j.files[0].url) return j.files[0].url;
-      if (j.message && /^https?:\/\//.test(j.message)) return j.message;
+      if (j.message && String(j.message).indexOf("http") === 0) return j.message;
     } catch (e) {}
     var t = String(responseText || "").trim();
-    if (/^https?:\/\//i.test(t)) return t.split(/\s/)[0];
+    if (t.indexOf("http") === 0) return t.split(" ")[0];
     throw new Error("Could not parse upload URL from response");
   }
 
