@@ -1,9 +1,9 @@
 {
   "name": "ShowBadgesInChat",
-  "description": "Show profile badges next to usernames in guilds, DMs, and groups",
+  "description": "Real Discord badge icons next to usernames for every non-bot user",
   "authors": [{"name": "fratboys", "id": "0"}],
   "main": "index.js",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "vendetta": {"icon": "ic_person_shield_24px"},
-  "hash": "14a022a473367e9611ac81eae4cc0eedce292613b2a248250478c7719999ecc3"
+  "hash": "75ba4f24689a5470351ff28197f3302b6ea1b50a0d58af919c66f2e75692d4be"
 }
